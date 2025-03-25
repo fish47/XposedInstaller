@@ -2,31 +2,20 @@ package de.robv.android.xposed.installer.installation;
 
 import android.annotation.SuppressLint;
 import android.app.Fragment;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.UiThread;
 import android.support.design.widget.Snackbar;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.SwitchCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -38,20 +27,9 @@ import java.util.Set;
 
 import de.robv.android.xposed.installer.R;
 import de.robv.android.xposed.installer.XposedApp;
-import de.robv.android.xposed.installer.util.DownloadsUtil;
-import de.robv.android.xposed.installer.util.DownloadsUtil.DownloadFinishedCallback;
-import de.robv.android.xposed.installer.util.DownloadsUtil.DownloadInfo;
 import de.robv.android.xposed.installer.util.FrameworkZips;
-import de.robv.android.xposed.installer.util.FrameworkZips.FrameworkZip;
-import de.robv.android.xposed.installer.util.FrameworkZips.LocalFrameworkZip;
-import de.robv.android.xposed.installer.util.FrameworkZips.LocalZipLoader;
-import de.robv.android.xposed.installer.util.FrameworkZips.OnlineFrameworkZip;
-import de.robv.android.xposed.installer.util.FrameworkZips.OnlineZipLoader;
 import de.robv.android.xposed.installer.util.InstallZipUtil;
-import de.robv.android.xposed.installer.util.Loader;
 import de.robv.android.xposed.installer.util.NavUtil;
-import de.robv.android.xposed.installer.util.RootUtil;
-import de.robv.android.xposed.installer.util.RunnableWithParam;
 
 public class StatusInstallerFragment extends Fragment {
     public static final File DISABLE_FILE = new File(XposedApp.BASE_DIR + "conf/disabled");
@@ -68,19 +46,6 @@ public class StatusInstallerFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.status_installer, container, false);
-
-        // Available ZIPs
-        final SwipeRefreshLayout refreshLayout = (SwipeRefreshLayout) v.findViewById(R.id.swiperefreshlayout);
-        refreshLayout.setColorSchemeColors(getResources().getColor(R.color.colorPrimary));
-
-        ONLINE_ZIP_LOADER.setSwipeRefreshLayout(refreshLayout);
-        ONLINE_ZIP_LOADER.addListener(mOnlineZipListener);
-        ONLINE_ZIP_LOADER.triggerFirstLoadIfNecessary();
-
-        LOCAL_ZIP_LOADER.addListener(mLocalZipListener);
-        LOCAL_ZIP_LOADER.triggerFirstLoadIfNecessary();
-
-        refreshZipViews(v);
 
         // Disable switch
         final SwitchCompat disableSwitch = (SwitchCompat) v.findViewById(R.id.disableSwitch);
@@ -171,14 +136,6 @@ public class StatusInstallerFragment extends Fragment {
             txtInstallContainer.setBackgroundColor(getResources().getColor(R.color.darker_green));
             txtInstallIcon.setImageDrawable(getResources().getDrawable(R.drawable.ic_check_circle));
         }
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        ONLINE_ZIP_LOADER.removeListener(mOnlineZipListener);
-        ONLINE_ZIP_LOADER.setSwipeRefreshLayout(null);
-        LOCAL_ZIP_LOADER.removeListener(mLocalZipListener);
     }
 
     private File getCanonicalFile(File file) {
@@ -318,222 +275,4 @@ public class StatusInstallerFragment extends Fragment {
             Log.e(XposedApp.TAG, "Could not detect Verified Boot state", e);
         }
     }
-
-    @UiThread
-    private void refreshZipViews(View view) {
-        LinearLayout zips = (LinearLayout) view.findViewById(R.id.zips);
-        zips.removeAllViews();
-        TextView tvError = (TextView) view.findViewById(R.id.zips_load_error);
-        synchronized (FrameworkZips.class) {
-            boolean hasZips = false;
-            for (FrameworkZips.Type type : FrameworkZips.Type.values()) {
-                hasZips |= addZipViews(getActivity().getLayoutInflater(), zips, type);
-            }
-
-            if (!FrameworkZips.hasLoadedOnlineZips()) {
-                tvError.setText(R.string.framework_zip_load_failed);
-                tvError.setVisibility(View.VISIBLE);
-            } else if (!hasZips) {
-                tvError.setText(R.string.framework_no_zips);
-                tvError.setVisibility(View.VISIBLE);
-            } else {
-                tvError.setVisibility(View.GONE);
-            }
-        }
-    }
-
-    private boolean addZipViews(LayoutInflater inflater, ViewGroup root, FrameworkZips.Type type) {
-        ViewGroup container = null;
-        Set<String> allTitles = FrameworkZips.getAllTitles(type);
-        for (String title : allTitles) {
-            OnlineFrameworkZip online = FrameworkZips.getOnline(title, type);
-            LocalFrameworkZip local = FrameworkZips.getLocal(title, type);
-
-            boolean hasOnline = (online != null);
-            boolean hasLocal = (local != null);
-            FrameworkZip zip = hasOnline ? online : local;
-            boolean isOutdated = zip.isOutdated();
-
-            if (isOutdated) {
-                continue;
-            }
-
-            if (container == null) {
-                View card = inflater.inflate(R.layout.framework_zip_group, root, false);
-                TextView tv = (TextView) card.findViewById(android.R.id.title);
-                tv.setText(type.title);
-                container = (ViewGroup) card.findViewById(android.R.id.content);
-                root.addView(card);
-            }
-
-            addZipView(inflater, container, zip, hasOnline, hasLocal, isOutdated);
-        }
-
-        return !allTitles.isEmpty();
-    }
-
-    public void addZipView(LayoutInflater inflater, ViewGroup container, final FrameworkZip zip,
-                           boolean hasOnline, boolean hasLocal, boolean isOutdated) {
-        View view = inflater.inflate(R.layout.framework_zip_item, container, false);
-
-        TextView tvTitle = (TextView) view.findViewById(android.R.id.title);
-        tvTitle.setText(zip.title);
-
-        ImageView ivStatus = (ImageView) view.findViewById(R.id.framework_zip_status);
-        if (!hasLocal) {
-            ivStatus.setImageResource(R.drawable.ic_cloud);
-        } else if (hasOnline) {
-            ivStatus.setImageResource(R.drawable.ic_cloud_download);
-        } else {
-            ivStatus.setImageResource(R.drawable.ic_cloud_off);
-        }
-
-        if (isOutdated) {
-            int gray = Color.parseColor("#A0A0A0");
-            tvTitle.setTextColor(gray);
-            ivStatus.setColorFilter(gray);
-        }
-
-        view.setClickable(true);
-        view.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showActionDialog(getActivity(), zip.title, zip.type);
-            }
-        });
-        container.addView(view);
-    }
-
-    private void showActionDialog(final Context context, final String title, final FrameworkZips.Type type) {
-        final int ACTION_FLASH = 0;
-        final int ACTION_FLASH_RECOVERY = 1;
-        final int ACTION_SAVE = 2;
-        final int ACTION_DELETE = 3;
-
-        boolean isDownloaded = FrameworkZips.hasLocal(title, type);
-        int itemCount = isDownloaded ? 3 : 2;
-        String[] texts = new String[itemCount];
-        int[] ids = new int[itemCount];
-        int i = 0;
-
-        texts[i] = context.getString(type.text_flash);
-        ids[i++] = ACTION_FLASH;
-
-        texts[i] = context.getString(type.text_flash_recovery);
-        ids[i++] = ACTION_FLASH_RECOVERY;
-
-        /*
-        texts[i] = "Save to...";
-        ids[i++] = ACTION_SAVE;
-        */
-
-        if (FrameworkZips.hasLocal(title, type)) {
-            texts[i] = context.getString(R.string.framework_delete);
-            ids[i++] = ACTION_DELETE;
-        }
-
-        new MaterialDialog.Builder(context)
-                .title(title)
-                .items(texts)
-                .itemsIds(ids)
-                .itemsCallback(new MaterialDialog.ListCallback() {
-                    @Override
-                    public void onSelection(MaterialDialog dialog, View itemView, int position, CharSequence text) {
-                        final int action = itemView.getId();
-
-                        // Handle delete simple actions.
-                        if (action == ACTION_DELETE) {
-                            FrameworkZips.delete(context, title, type);
-                            LOCAL_ZIP_LOADER.triggerReload(true);
-                            return;
-                        }
-
-                        // Handle actions that need a download first.
-                        RunnableWithParam<File> runAfterDownload = null;
-                        if (action == ACTION_FLASH) {
-                            runAfterDownload = new RunnableWithParam<File>() {
-                                @Override
-                                public void run(File file) {
-                                    flash(context, new FlashDirectly(file, type, title, false));
-                                }
-                            };
-                        } else if (action == ACTION_FLASH_RECOVERY) {
-                            runAfterDownload = new RunnableWithParam<File>() {
-                                @Override
-                                public void run(File file) {
-                                    flash(context, new FlashRecoveryAuto(file, type, title));
-                                }
-                            };
-                        } else if (action == ACTION_SAVE) {
-                            runAfterDownload = new RunnableWithParam<File>() {
-                                @Override
-                                public void run(File file) {
-                                    saveTo(context, file);
-                                }
-                            };
-                        }
-
-                        LocalFrameworkZip local = FrameworkZips.getLocal(title, type);
-                        if (local != null) {
-                            runAfterDownload.run(local.path);
-                        } else {
-                            download(context, title, type, runAfterDownload);
-                        }
-                    }
-                })
-                .show();
-    }
-
-    private void download(Context context, String title, FrameworkZips.Type type, final RunnableWithParam<File> callback) {
-        OnlineFrameworkZip zip = FrameworkZips.getOnline(title, type);
-        new DownloadsUtil.Builder(context)
-                .setTitle(zip.title)
-                .setUrl(zip.url)
-                .setDestinationFromUrl(DownloadsUtil.DOWNLOAD_FRAMEWORK)
-                .setCallback(new DownloadFinishedCallback() {
-                    @Override
-                    public void onDownloadFinished(Context context, DownloadInfo info) {
-                        LOCAL_ZIP_LOADER.triggerReload(true);
-                        callback.run(new File(info.localFilename));
-                    }
-                })
-                .setMimeType(DownloadsUtil.MIME_TYPES.ZIP)
-                .setDialog(true)
-                .download();
-    }
-
-    private static void flash(Context context, Flashable flashable) {
-        Intent install = new Intent(context, InstallationActivity.class);
-        install.putExtra(Flashable.KEY, flashable);
-        context.startActivity(install);
-    }
-
-    private static void saveTo(Context context, File file) {
-        Toast.makeText(context, "Not implemented yet", Toast.LENGTH_SHORT).show();
-    }
-
-    private void refreshZipViewsOnUiThread() {
-        XposedApp.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                refreshZipViews(getView());
-            }
-        });
-    }
-
-    private static final OnlineZipLoader ONLINE_ZIP_LOADER = OnlineZipLoader.getInstance();
-    private final Loader.Listener<OnlineZipLoader> mOnlineZipListener = new Loader.Listener<OnlineZipLoader>() {
-        @Override
-        public void onReloadDone(OnlineZipLoader loader) {
-            refreshZipViewsOnUiThread();
-        }
-    };
-
-    private static final LocalZipLoader LOCAL_ZIP_LOADER = LocalZipLoader.getInstance();
-    private final Loader.Listener<LocalZipLoader> mLocalZipListener = new Loader.Listener<LocalZipLoader>() {
-        @Override
-        public void onReloadDone(LocalZipLoader loader) {
-            refreshZipViewsOnUiThread();
-        }
-    };
 }
