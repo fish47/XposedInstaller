@@ -133,11 +133,6 @@ public class WelcomeActivity extends XposedBaseActivity implements NavigationVie
                 setTitle(R.string.nav_item_modules);
                 navFragment = new ModulesFragment();
                 break;
-            case R.id.nav_item_downloads:
-                mPrevSelectedId = itemId;
-                setTitle(R.string.nav_item_download);
-                navFragment = new DownloadFragment();
-                break;
             case R.id.nav_item_logs:
                 mPrevSelectedId = itemId;
                 setTitle(R.string.nav_item_logs);

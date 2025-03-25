@@ -4,7 +4,6 @@ support = "27.0.2"
 picasso = "2.5.2"
 licensesdialog = "1.8.1"
 materialdialogs = "0.9.0.2"
-stickylistheaders = "2.7.0"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -18,4 +17,3 @@ support-support-v13 = { module = "com.android.support:support-v13", version.ref 
 picasso = { module = "com.squareup.picasso:picasso", version.ref = "picasso" }
 licensesdialog = { module = "de.psdev.licensesdialog:licensesdialog", version.ref = "licensesdialog" }
 materialdialogs = { module = "com.afollestad.material-dialogs:commons", version.ref = "materialdialogs" }
-stickylistheaders = { module = "se.emilsjolander:stickylistheaders", version.ref = "stickylistheaders" }

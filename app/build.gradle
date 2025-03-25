@@ -39,6 +39,5 @@ dependencies {
     implementation libs.picasso
     implementation libs.licensesdialog
     implementation libs.materialdialogs
-    implementation libs.stickylistheaders
     compileOnly fileTree(dir: "libs", include: ["*.jar"])
 }
