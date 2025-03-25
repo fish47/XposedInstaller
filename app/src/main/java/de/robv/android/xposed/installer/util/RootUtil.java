@@ -257,19 +257,6 @@ public class RootUtil {
         RebootMode(@StringRes int titleRes) {
             this.titleRes = titleRes;
         }
-
-        public static RebootMode fromId(@IdRes int id) {
-            switch (id) {
-                case R.id.reboot:
-                    return NORMAL;
-                case R.id.soft_reboot:
-                    return SOFT;
-                case R.id.reboot_recovery:
-                    return RECOVERY;
-                default:
-                    throw new IllegalArgumentException();
-            }
-        }
     }
 
     public static boolean reboot(RebootMode mode, @NonNull Context context) {

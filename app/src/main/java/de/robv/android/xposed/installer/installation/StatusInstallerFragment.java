@@ -55,7 +55,6 @@ import de.robv.android.xposed.installer.util.RunnableWithParam;
 
 public class StatusInstallerFragment extends Fragment {
     public static final File DISABLE_FILE = new File(XposedApp.BASE_DIR + "conf/disabled");
-    private boolean mShowOutdated = false;
 
     private static boolean checkClassExists(String className) {
         try {
@@ -180,92 +179,6 @@ public class StatusInstallerFragment extends Fragment {
         ONLINE_ZIP_LOADER.removeListener(mOnlineZipListener);
         ONLINE_ZIP_LOADER.setSwipeRefreshLayout(null);
         LOCAL_ZIP_LOADER.removeListener(mLocalZipListener);
-    }
-
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        mShowOutdated = XposedApp.getPreferences().getBoolean("framework_download_show_outdated", false);
-        setHasOptionsMenu(true);
-    }
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_installer, menu);
-        menu.findItem(R.id.show_outdated).setChecked(mShowOutdated);
-        if (Build.VERSION.SDK_INT < 26) {
-            menu.findItem(R.id.dexopt_now).setVisible(false);
-        }
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.reboot:
-            case R.id.soft_reboot:
-            case R.id.reboot_recovery:
-                final RootUtil.RebootMode mode = RootUtil.RebootMode.fromId(item.getItemId());
-                confirmReboot(mode.titleRes, new MaterialDialog.SingleButtonCallback() {
-                    @Override
-                    public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                        RootUtil.reboot(mode, getActivity());
-                    }
-                });
-                return true;
-
-            case R.id.dexopt_now:
-                new MaterialDialog.Builder(getActivity())
-                        .title(R.string.dexopt_now)
-                        .content(R.string.this_may_take_a_while)
-                        .progress(true, 0)
-                        .cancelable(false)
-                        .showListener(new DialogInterface.OnShowListener() {
-                            @Override
-                            public void onShow(final DialogInterface dialog) {
-                                new Thread("dexopt") {
-                                    @Override
-                                    public void run() {
-                                        RootUtil rootUtil = new RootUtil();
-                                        if (!rootUtil.startShell()) {
-                                            dialog.dismiss();
-                                            NavUtil.showMessage(getActivity(), getString(R.string.root_failed));
-                                            return;
-                                        }
-
-                                        rootUtil.execute("cmd package bg-dexopt-job", null);
-
-                                        dialog.dismiss();
-                                        XposedApp.runOnUiThread(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                Toast.makeText(getActivity(), R.string.done, Toast.LENGTH_LONG).show();
-                                            }
-                                        });
-                                    }
-                                }.start();
-                            }
-                        }).show();
-                return true;
-
-            case R.id.show_outdated:
-                mShowOutdated = !item.isChecked();
-                XposedApp.getPreferences().edit().putBoolean("framework_download_show_outdated", mShowOutdated).apply();
-                item.setChecked(mShowOutdated);
-                refreshZipViews(getView());
-                return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    private void confirmReboot(int contentTextId, MaterialDialog.SingleButtonCallback yesHandler) {
-        new MaterialDialog.Builder(getActivity())
-                .content(R.string.reboot_confirmation)
-                .positiveText(contentTextId)
-                .negativeText(android.R.string.no)
-                .onPositive(yesHandler)
-                .show();
     }
 
     private File getCanonicalFile(File file) {
@@ -441,7 +354,7 @@ public class StatusInstallerFragment extends Fragment {
             FrameworkZip zip = hasOnline ? online : local;
             boolean isOutdated = zip.isOutdated();
 
-            if (isOutdated && !mShowOutdated) {
+            if (isOutdated) {
                 continue;
             }
 
