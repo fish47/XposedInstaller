@@ -18,7 +18,8 @@ import de.robv.android.xposed.installer.R;
 import de.robv.android.xposed.installer.XposedApp;
 import de.robv.android.xposed.installer.installation.FlashCallback;
 import eu.chainfire.libsuperuser.Shell;
-import eu.chainfire.libsuperuser.Shell.OnCommandResultListener;
+import eu.chainfire.libsuperuser.Shell.OnCommandResultListener2;
+import eu.chainfire.libsuperuser.StreamGobbler;
 
 import static de.robv.android.xposed.installer.util.InstallZipUtil.triggerError;
 
@@ -86,15 +87,19 @@ public class RootUtil {
     }
 
 
-    private final Shell.OnCommandResultListener mOpenListener = new Shell.OnCommandResultListener() {
+    private final Shell.OnShellOpenResultListener mOpenListener = new Shell.OnShellOpenResultListener() {
         @Override
-        public void onCommandResult(int commandCode, int exitCode, List<String> output) {
-            mStdoutListener.onCommandResult(commandCode, exitCode);
+        public void onOpenResult(boolean success, int reason) {
+            wakeupCallbackThread(reason);
         }
     };
 
     private final Shell.OnCommandLineListener mStdoutListener = new Shell.OnCommandLineListener() {
-        public void onLine(String line) {
+        @Override
+        public void onSTDERR(String line) {}
+
+        @Override
+        public void onSTDOUT(String line) {
             if (mCallback != null) {
                 mCallback.onLine(line);
             }
@@ -102,25 +107,24 @@ public class RootUtil {
 
         @Override
         public void onCommandResult(int commandCode, int exitCode) {
-            mLastExitCode = exitCode;
-            synchronized (mCallbackThread) {
-                mCommandRunning = false;
-                mCallbackThread.notifyAll();
-            }
+            wakeupCallbackThread(exitCode);
         }
     };
 
-    private final Shell.OnCommandLineListener mStderrListener = new Shell.OnCommandLineListener() {
+    private void wakeupCallbackThread(int exitCode) {
+        mLastExitCode = exitCode;
+        synchronized (mCallbackThread) {
+            mCommandRunning = false;
+            mCallbackThread.notifyAll();
+        }
+    }
+
+    private final StreamGobbler.OnLineListener mStderrListener = new StreamGobbler.OnLineListener() {
         @Override
         public void onLine(String line) {
             if (mCallback != null) {
                 mCallback.onErrorLine(line);
             }
-        }
-
-        @Override
-        public void onCommandResult(int commandCode, int exitCode) {
-            // Not called for STDERR listener.
         }
     };
 
@@ -134,7 +138,7 @@ public class RootUtil {
             }
         }
 
-        if (mLastExitCode == OnCommandResultListener.WATCHDOG_EXIT || mLastExitCode == OnCommandResultListener.SHELL_DIED) {
+        if (mLastExitCode == OnCommandResultListener2.WATCHDOG_EXIT || mLastExitCode == OnCommandResultListener2.SHELL_DIED) {
             dispose();
         }
     }
@@ -165,7 +169,7 @@ public class RootUtil {
 
         waitForCommandFinished();
 
-        if (mLastExitCode != OnCommandResultListener.SHELL_RUNNING) {
+        if (mLastExitCode != OnCommandResultListener2.SHELL_RUNNING) {
             dispose();
             return false;
         }

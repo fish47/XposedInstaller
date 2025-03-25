@@ -94,7 +94,9 @@ public class AboutActivity extends XposedBaseActivity {
                             .positiveText(android.R.string.ok)
                             .show();
 
-                    ((TextView) dialog.findViewById(R.id.md_content)).setMovementMethod(LinkMovementMethod.getInstance());
+                    TextView view = dialog.getContentView();
+                    if (view != null)
+                        view.setMovementMethod(LinkMovementMethod.getInstance());
                 }
             });
 
