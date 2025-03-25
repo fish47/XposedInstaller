@@ -22,7 +22,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
-import de.robv.android.xposed.installer.util.AssetUtil;
 import de.robv.android.xposed.installer.util.DownloadsUtil;
 import de.robv.android.xposed.installer.util.InstallZipUtil;
 import de.robv.android.xposed.installer.util.InstallZipUtil.XposedProp;
@@ -118,7 +117,6 @@ public class XposedApp extends Application implements ActivityLifecycleCallbacks
         reloadXposedProp();
         createDirectories();
         NotificationUtil.init();
-        AssetUtil.removeBusybox();
 
         registerActivityLifecycleCallbacks(this);
     }
