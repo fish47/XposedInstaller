@@ -2,7 +2,6 @@
 agp = "8.9.0"
 support = "27.0.2"
 picasso = "2.5.2"
-libsuperuser = "1.1.0"
 licensesdialog = "1.8.1"
 materialdialogs = "0.9.0.2"
 stickylistheaders = "2.7.0"
@@ -17,7 +16,6 @@ support-customtabs = { module = "com.android.support:customtabs", version.ref = 
 support-support-v13 = { module = "com.android.support:support-v13", version.ref = "support" }
 
 picasso = { module = "com.squareup.picasso:picasso", version.ref = "picasso" }
-libsuperuser = { module = "eu.chainfire:libsuperuser", version.ref = "libsuperuser" }
 licensesdialog = { module = "de.psdev.licensesdialog:licensesdialog", version.ref = "licensesdialog" }
 materialdialogs = { module = "com.afollestad.material-dialogs:commons", version.ref = "materialdialogs" }
 stickylistheaders = { module = "se.emilsjolander:stickylistheaders", version.ref = "stickylistheaders" }
