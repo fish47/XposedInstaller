@@ -3,12 +3,6 @@
       xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/menu_save"
-        android:icon="@drawable/ic_save"
-        android:title="@string/menuSaveToSd"
-        app:showAsAction="ifRoom"/>
-
-    <item
         android:id="@+id/menu_send"
         android:icon="@drawable/ic_send"
         android:title="@string/menuSend"

@@ -1,18 +1,10 @@
 package de.robv.android.xposed.installer;
 
-import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Fragment;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Handler;
-import android.support.annotation.NonNull;
-import android.support.v13.app.FragmentCompat;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.FileProvider;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -29,13 +21,9 @@ import com.afollestad.materialdialogs.MaterialDialog;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Calendar;
-
-import static de.robv.android.xposed.installer.XposedApp.WRITE_EXTERNAL_PERMISSION;
 
 public class LogsFragment extends Fragment {
 
@@ -105,9 +93,6 @@ public class LogsFragment extends Fragment {
                     send();
                 } catch (NullPointerException ignored) {
                 }
-                return true;
-            case R.id.menu_save:
-                save();
                 return true;
             case R.id.menu_clear:
                 clear();
@@ -183,72 +168,6 @@ public class LogsFragment extends Fragment {
         sendIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         sendIntent.setType("application/html");
         startActivity(Intent.createChooser(sendIntent, getResources().getString(R.string.menuSend)));
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions,
-                grantResults);
-        if (requestCode == WRITE_EXTERNAL_PERMISSION) {
-            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                if (mClickedMenuItem != null) {
-                    new Handler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            onOptionsItemSelected(mClickedMenuItem);
-                        }
-                    }, 500);
-                }
-            } else {
-                Toast.makeText(getActivity(), R.string.permissionNotGranted, Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    @SuppressLint("DefaultLocale")
-    private File save() {
-        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            FragmentCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, WRITE_EXTERNAL_PERMISSION);
-            return null;
-        }
-
-        if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            Toast.makeText(getActivity(), R.string.sdcard_not_writable, Toast.LENGTH_LONG).show();
-            return null;
-        }
-
-        Calendar now = Calendar.getInstance();
-        String filename = String.format(
-                "xposed_%s_%04d%02d%02d_%02d%02d%02d.log", "error",
-                now.get(Calendar.YEAR), now.get(Calendar.MONTH) + 1,
-                now.get(Calendar.DAY_OF_MONTH), now.get(Calendar.HOUR_OF_DAY),
-                now.get(Calendar.MINUTE), now.get(Calendar.SECOND));
-
-        File dir = getActivity().getExternalFilesDir(null);
-
-        if (!dir.exists()) dir.mkdir();
-
-        File targetFile = new File(dir, filename);
-
-        try {
-            FileInputStream in = new FileInputStream(mFileErrorLog);
-            FileOutputStream out = new FileOutputStream(targetFile);
-            byte[] buffer = new byte[1024];
-            int len;
-            while ((len = in.read(buffer)) > 0) {
-                out.write(buffer, 0, len);
-            }
-            in.close();
-            out.close();
-
-            Toast.makeText(getActivity(), targetFile.toString(),
-                    Toast.LENGTH_LONG).show();
-            return targetFile;
-        } catch (IOException e) {
-            Toast.makeText(getActivity(), getResources().getString(R.string.logs_save_failed) + "\n" + e.getMessage(), Toast.LENGTH_LONG).show();
-            return null;
-        }
     }
 
     private class LogsReader extends AsyncTask<File, Integer, String> {

@@ -10,7 +10,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.FileUtils;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -44,7 +43,6 @@ public class XposedApp extends Application implements ActivityLifecycleCallbacks
             "/system/xposed.prop",    // classical
     };
 
-    public static int WRITE_EXTERNAL_PERMISSION = 69;
     private static XposedApp mInstance = null;
     private static Thread mUiThread;
     private static Handler mMainHandler;
@@ -101,10 +99,6 @@ public class XposedApp extends Application implements ActivityLifecycleCallbacks
         installIntent.setDataAndType(uri, DownloadsUtil.MIME_TYPE_APK);
         installIntent.putExtra(Intent.EXTRA_INSTALLER_PACKAGE_NAME, context.getApplicationInfo().packageName);
         context.startActivity(installIntent);
-    }
-
-    public static String getDownloadPath() {
-        return getPreferences().getString("download_location", Environment.getExternalStorageDirectory() + "/XposedInstaller");
     }
 
     public void onCreate() {
