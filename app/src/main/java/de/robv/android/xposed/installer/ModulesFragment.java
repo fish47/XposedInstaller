@@ -77,7 +77,6 @@ public class ModulesFragment extends ListFragment implements ModuleListener {
     public static final String SETTINGS_CATEGORY = "de.robv.android.xposed.category.MODULE_SETTINGS";
     public static final String PLAY_STORE_PACKAGE = "com.android.vending";
     public static final String PLAY_STORE_LINK = "https://play.google.com/store/apps/details?id=%s";
-    public static final String XPOSED_REPO_LINK = "http://repo.xposed.info/module/%s";
     private static final String NOT_ACTIVE_NOTE_TAG = "NOT_ACTIVE_NOTE";
     private static String PLAY_STORE_LABEL = null;
     private int installedXposedVersion;
@@ -181,11 +180,6 @@ public class ModulesFragment extends ListFragment implements ModuleListener {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.bookmarks) {
-            startActivity(new Intent(getActivity(), ModulesBookmark.class));
-            return true;
-        }
-
         String backupPath = Environment.getExternalStorageDirectory()
                 + "/XposedInstaller";
 
@@ -336,9 +330,9 @@ public class ModulesFragment extends ListFragment implements ModuleListener {
                 }
             }
 
-            if (mv != null) {
-                DownloadsUtil.addModule(getActivity(), m.name, mv.downloadLink, new DownloadDetailsVersionsFragment.DownloadModuleCallback(mv));
-            }
+//            if (mv != null) {
+//                DownloadsUtil.addModule(getActivity(), m.name, mv.downloadLink, new DownloadDetailsVersionsFragment.DownloadModuleCallback(mv));
+//            }
         }
 
         return true;
@@ -401,7 +395,6 @@ public class ModulesFragment extends ListFragment implements ModuleListener {
             if (NavUtil.parseURL(support) == null)
                 menu.removeItem(R.id.menu_support);
         } catch (RowNotFoundException e) {
-            menu.removeItem(R.id.menu_download_updates);
             menu.removeItem(R.id.menu_support);
         }
 
@@ -421,12 +414,6 @@ public class ModulesFragment extends ListFragment implements ModuleListener {
         switch (item.getItemId()) {
             case R.id.menu_launch:
                 startActivity(getSettingsIntent(module.packageName));
-                return true;
-
-            case R.id.menu_download_updates:
-                Intent detailsIntent = new Intent(getActivity(), DownloadDetailsActivity.class);
-                detailsIntent.setData(Uri.fromParts("package", module.packageName, null));
-                startActivity(detailsIntent);
                 return true;
 
             case R.id.menu_support:

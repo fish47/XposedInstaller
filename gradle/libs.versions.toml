@@ -14,6 +14,5 @@ support-design = { module = "com.android.support:design", version.ref = "support
 support-customtabs = { module = "com.android.support:customtabs", version.ref = "support" }
 support-support-v13 = { module = "com.android.support:support-v13", version.ref = "support" }
 
-picasso = { module = "com.squareup.picasso:picasso", version.ref = "picasso" }
 licensesdialog = { module = "de.psdev.licensesdialog:licensesdialog", version.ref = "licensesdialog" }
 materialdialogs = { module = "com.afollestad.material-dialogs:commons", version.ref = "materialdialogs" }

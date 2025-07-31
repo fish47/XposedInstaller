@@ -216,16 +216,7 @@ public class WelcomeActivity extends XposedBaseActivity implements NavigationVie
 
     private void notifyDataSetChanged() {
         View parentLayout = findViewById(R.id.content_frame);
-        String frameworkUpdateVersion = mRepoLoader.getFrameworkUpdateVersion();
         boolean moduleUpdateAvailable = mRepoLoader.hasModuleUpdates();
-
-        Fragment currentFragment = getFragmentManager().findFragmentById(R.id.content_frame);
-        if (currentFragment instanceof DownloadDetailsFragment) {
-            if (frameworkUpdateVersion != null) {
-                Snackbar.make(parentLayout, R.string.welcome_framework_update_available + " " + String.valueOf(frameworkUpdateVersion), Snackbar.LENGTH_LONG).show();
-            }
-        }
-
         boolean snackBar = XposedApp.getPreferences().getBoolean("snack_bar", true);
 
         if (moduleUpdateAvailable && snackBar) {

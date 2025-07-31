@@ -36,7 +36,6 @@ dependencies {
     implementation libs.support.design
     implementation libs.support.customtabs
     implementation libs.support.support.v13
-    implementation libs.picasso
     implementation libs.licensesdialog
     implementation libs.materialdialogs
     compileOnly fileTree(dir: "libs", include: ["*.jar"])

@@ -1,21 +1,7 @@
 package de.robv.android.xposed.installer.repo;
 
-import android.app.Activity;
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Point;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LevelListDrawable;
-import android.os.AsyncTask;
-import android.text.Html;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.util.Log;
 import android.util.Pair;
-import android.widget.TextView;
-
-import com.squareup.picasso.Picasso;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -23,8 +9,6 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-import de.robv.android.xposed.installer.R;
 
 public class RepoParser {
     public final static String TAG = "XposedRepoParser";
@@ -43,39 +27,6 @@ public class RepoParser {
 
     public static void parse(InputStream is, RepoParserCallback callback) throws XmlPullParserException, IOException {
         new RepoParser(is, callback).readRepo();
-    }
-
-    public static Spanned parseSimpleHtml(final Context c, String source, final TextView textView) {
-        source = source.replaceAll("<li>", "\t\u0095 ");
-        source = source.replaceAll("</li>", "<br>");
-        Spanned html = Html.fromHtml(source, new Html.ImageGetter() {
-            @Override
-            public Drawable getDrawable(String source) {
-                LevelListDrawable d = new LevelListDrawable();
-                @SuppressWarnings("deprecation")
-                Drawable empty = c.getResources().getDrawable(R.drawable.ic_no_image);
-                d.addLevel(0, 0, empty);
-                assert empty != null;
-                d.setBounds(0, 0, empty.getIntrinsicWidth(), empty.getIntrinsicHeight());
-                new ImageGetterAsyncTask(c, source, d).execute(textView);
-
-                return d;
-            }
-        }, null);
-
-        // trim trailing newlines
-        int len = html.length();
-        int end = len;
-        for (int i = len - 1; i >= 0; i--) {
-            if (html.charAt(i) != '\n')
-                break;
-            end = i;
-        }
-
-        if (end == len)
-            return html;
-        else
-            return new SpannableStringBuilder(html, 0, end);
     }
 
     protected void readRepo() throws XmlPullParserException, IOException {
@@ -294,44 +245,4 @@ public class RepoParser {
         void onRemoveModule(String packageName);
         void onCompleted(Repository repository);
     }
-
-    static class ImageGetterAsyncTask extends AsyncTask<TextView, Void, Bitmap> {
-        private LevelListDrawable levelListDrawable;
-        private Context context;
-        private String source;
-        private TextView t;
-
-        public ImageGetterAsyncTask(Context context, String source, LevelListDrawable levelListDrawable) {
-            this.context = context;
-            this.source = source;
-            this.levelListDrawable = levelListDrawable;
-        }
-
-        @Override
-        protected Bitmap doInBackground(TextView... params) {
-            t = params[0];
-            try {
-                return Picasso.with(context).load(source).get();
-            } catch (Exception e) {
-                return null;
-            }
-        }
-
-        @Override
-        protected void onPostExecute(final Bitmap bitmap) {
-            try {
-                Drawable d = new BitmapDrawable(context.getResources(), bitmap);
-                Point size = new Point();
-                ((Activity) context).getWindowManager().getDefaultDisplay().getSize(size);
-                int multiplier = size.x / bitmap.getWidth();
-                if (multiplier <= 0) multiplier = 1;
-                levelListDrawable.addLevel(1, 1, d);
-                levelListDrawable.setBounds(0, 0, bitmap.getWidth() * multiplier, bitmap.getHeight() * multiplier);
-                levelListDrawable.setLevel(1);
-                t.setText(t.getText());
-            } catch (Exception ignored) { /* Like a null bitmap, etc. */
-            }
-        }
-    }
-
 }
