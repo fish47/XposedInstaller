@@ -12,6 +12,7 @@ android {
 
     defaultConfig {
         applicationId "de.robv.android.xposed.installer"
+        resConfigs "en"
         minSdkVersion 15
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 25
