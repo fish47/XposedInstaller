@@ -31,8 +31,6 @@ import de.robv.android.xposed.installer.util.ThemeUtil;
 public class WelcomeActivity extends XposedBaseActivity implements NavigationView.OnNavigationItemSelectedListener,
         ModuleListener, Loader.Listener<RepoLoader> {
 
-    private static final String SELECTED_ITEM_ID = "SELECTED_ITEM_ID";
-    private final Handler mDrawerHandler = new Handler();
     private RepoLoader mRepoLoader;
     private DrawerLayout mDrawerLayout;
     private int mPrevSelectedId;
@@ -72,21 +70,12 @@ public class WelcomeActivity extends XposedBaseActivity implements NavigationVie
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         mSelectedId = mNavigationView.getMenu().getItem(prefs.getInt("default_view", 0)).getItemId();
-        mSelectedId = savedInstanceState == null ? mSelectedId : savedInstanceState.getInt(SELECTED_ITEM_ID);
         mPrevSelectedId = mSelectedId;
         mNavigationView.getMenu().findItem(mSelectedId).setChecked(true);
+        navigate(mSelectedId);
 
         if (savedInstanceState == null) {
-            mDrawerHandler.removeCallbacksAndMessages(null);
-            mDrawerHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    navigate(mSelectedId);
-                }
-            }, 250);
-
             boolean openDrawer = prefs.getBoolean("open_drawer", false);
-
             if (openDrawer)
                 mDrawerLayout.openDrawer(GravityCompat.START);
             else
@@ -109,13 +98,7 @@ public class WelcomeActivity extends XposedBaseActivity implements NavigationVie
     public void switchFragment(int itemId) {
         mSelectedId = mNavigationView.getMenu().getItem(itemId).getItemId();
         mNavigationView.getMenu().findItem(mSelectedId).setChecked(true);
-        mDrawerHandler.removeCallbacksAndMessages(null);
-        mDrawerHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                navigate(mSelectedId);
-            }
-        }, 250);
+        navigate(mSelectedId);
         mDrawerLayout.closeDrawers();
     }
 
@@ -157,20 +140,17 @@ public class WelcomeActivity extends XposedBaseActivity implements NavigationVie
         if (navFragment != null) {
             FragmentTransaction transaction = getFragmentManager().beginTransaction();
             transaction.setCustomAnimations(R.animator.fade_in, R.animator.fade_out);
-            try {
-                transaction.replace(R.id.content_frame, navFragment).commit();
+            transaction.replace(R.id.content_frame, navFragment).commitAllowingStateLoss();
 
-                if (elevation != null) {
-                    Animation a = new Animation() {
-                        @Override
-                        protected void applyTransformation(float interpolatedTime, Transformation t) {
-                            elevation.setLayoutParams(params);
-                        }
-                    };
-                    a.setDuration(150);
-                    elevation.startAnimation(a);
-                }
-            } catch (IllegalStateException ignored) {
+            if (elevation != null) {
+                Animation a = new Animation() {
+                    @Override
+                    protected void applyTransformation(float interpolatedTime, Transformation t) {
+                        elevation.setLayoutParams(params);
+                    }
+                };
+                a.setDuration(150);
+                elevation.startAnimation(a);
             }
         }
     }
@@ -188,21 +168,9 @@ public class WelcomeActivity extends XposedBaseActivity implements NavigationVie
     public boolean onNavigationItemSelected(MenuItem menuItem) {
         menuItem.setChecked(true);
         mSelectedId = menuItem.getItemId();
-        mDrawerHandler.removeCallbacksAndMessages(null);
-        mDrawerHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                navigate(mSelectedId);
-            }
-        }, 250);
+        navigate(mSelectedId);
         mDrawerLayout.closeDrawers();
         return true;
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt(SELECTED_ITEM_ID, mSelectedId);
     }
 
     @Override
