@@ -1,0 +1,37 @@
+name: Build
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Extract Keystore
+        run: echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+
+      - name: Build APK
+        run: gradle :app:assembleRelease -PdisableReleaseLint
+        env:
+          RELEASE_KEYSTORE_FILE: ${{ github.workspace }}/release.keystore
+          RELEASE_KEYSTORE_ALIAS: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+
+      - name: Make Tag
+        id: tag
+        uses: benjlevesque/short-sha@v3.0
+        with:
+          length: 6
+
+      - name: Upload Artifact
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.SHA }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          allowUpdates: true
+          artifacts:
+            app/build/outputs/apk/release/*.apk

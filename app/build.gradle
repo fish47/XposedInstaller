@@ -18,16 +18,30 @@ android {
         targetSdkVersion 25
         versionCode 43
         versionName "3.1.5"
-        archivesBaseName = "XposedInstaller_${versionName}".replace(" ", "_")
+        archivesBaseName = "XposedInstaller"
     }
 
     buildTypes {
-        release {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
-        }
         debug {
             pseudoLocalesEnabled true
+        }
+    }
+
+    if (System.getenv("RELEASE_KEYSTORE_FILE")) {
+        signingConfigs {
+            release {
+                storeFile file(System.getenv("RELEASE_KEYSTORE_FILE"))
+                storePassword System.getenv("RELEASE_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("RELEASE_KEYSTORE_ALIAS")
+                keyPassword System.getenv("RELEASE_KEYSTORE_PASSWORD")
+            }
+        }
+        buildTypes {
+            release {
+                signingConfig signingConfigs.release
+                minifyEnabled true
+                proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            }
         }
     }
 }
