@@ -10,7 +10,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.FileUtils;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.content.FileProvider;
@@ -22,6 +21,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 
 import de.robv.android.xposed.installer.util.DownloadsUtil;
+import de.robv.android.xposed.installer.util.FileUtils;
 import de.robv.android.xposed.installer.util.InstallZipUtil;
 import de.robv.android.xposed.installer.util.InstallZipUtil.XposedProp;
 import de.robv.android.xposed.installer.util.NotificationUtil;
@@ -121,14 +121,9 @@ public class XposedApp extends Application implements ActivityLifecycleCallbacks
         mkdirAndChmod("log", 00777);
 
         if (Build.VERSION.SDK_INT >= 24) {
-            try {
-                Method deleteDir = FileUtils.class.getDeclaredMethod("deleteContentsAndDir", File.class);
-                deleteDir.invoke(null, new File(BASE_DIR_LEGACY, "bin"));
-                deleteDir.invoke(null, new File(BASE_DIR_LEGACY, "conf"));
-                deleteDir.invoke(null, new File(BASE_DIR_LEGACY, "log"));
-            } catch (ReflectiveOperationException e) {
-                Log.w(XposedApp.TAG, "Failed to delete obsolete directories", e);
-            }
+            FileUtils.deleteContentsAndDir(new File(BASE_DIR_LEGACY, "bin"));
+            FileUtils.deleteContentsAndDir(new File(BASE_DIR_LEGACY, "conf"));
+            FileUtils.deleteContentsAndDir(new File(BASE_DIR_LEGACY, "log"));
         }
     }
 
