@@ -4,23 +4,18 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
-import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.v4.content.FileProvider;
+import android.support.annotation.Keep;
 import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 
-import de.robv.android.xposed.installer.util.DownloadsUtil;
 import de.robv.android.xposed.installer.util.FileUtils;
 import de.robv.android.xposed.installer.util.InstallZipUtil;
 import de.robv.android.xposed.installer.util.InstallZipUtil.XposedProp;
@@ -62,11 +57,8 @@ public class XposedApp extends Application implements ActivityLifecycleCallbacks
         }
     }
 
-    public static void postOnUiThread(Runnable action) {
-        mMainHandler.post(action);
-    }
-
     // This method is hooked by XposedBridge to return the current version
+    @Keep
     public static int getActiveXposedVersion() {
         return -1;
     }
@@ -84,21 +76,6 @@ public class XposedApp extends Application implements ActivityLifecycleCallbacks
 
     public static SharedPreferences getPreferences() {
         return mInstance.mPref;
-    }
-
-    public static void installApk(Context context, DownloadsUtil.DownloadInfo info) {
-        Intent installIntent = new Intent(Intent.ACTION_INSTALL_PACKAGE);
-        installIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        Uri uri;
-        if (Build.VERSION.SDK_INT >= 24) {
-            uri = FileProvider.getUriForFile(context, "de.robv.android.xposed.installer.fileprovider", new File(info.localFilename));
-            installIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        } else {
-            uri = Uri.fromFile(new File(info.localFilename));
-        }
-        installIntent.setDataAndType(uri, DownloadsUtil.MIME_TYPE_APK);
-        installIntent.putExtra(Intent.EXTRA_INSTALLER_PACKAGE_NAME, context.getApplicationInfo().packageName);
-        context.startActivity(installIntent);
     }
 
     public void onCreate() {
